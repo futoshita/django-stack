@@ -1,0 +1,120 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: traefik
+    command: --web \
+      --docker \
+      --docker.swarmmode \
+      --docker.domain=traefik \
+      --docker.watch \
+      --logLevel=DEBUG
+    networks:
+      - traefik-net
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - "$PWD/config/traefik/traefik.toml:/traefik.toml"
+      - "$PWD/config/traefik/certificates/:/certificates/"
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      placement:
+        constraints: [node.role==manager]
+
+  portainer:
+    image: portainer/portainer
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "portainerdata:/data"
+    networks:
+      - traefik-net
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+      labels:
+        - "traefik.docker.network=mystack_traefik-net"
+        - "traefik.enable=true"
+        - "traefik.frontend.entryPoints=http,https"
+        - "traefik.frontend.rule=Host:portainer.traefik"
+        - "traefik.port=9000"
+
+  postgres:
+    image: postgres:10.5-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - traefik-net
+    deploy:
+      replicas: 1
+    ports:
+      - "5432:5432"
+
+  django1:
+    image: futoshita/django
+    command: gunicorn hello_django.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - ./app/:/usr/src/app/
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/mediafiles
+    environment:
+      - SECRET_KEY=please_change_me
+      - SQL_ENGINE=django.db.backends.postgresql
+      - SQL_DATABASE=postgres
+      - SQL_USER=postgres
+      - SQL_PASSWORD=postgres
+      - SQL_HOST=postgres
+      - SQL_PORT=5432
+      - DATABASE=postgres
+    depends_on:
+      - postgres
+    networks:
+      - traefik-net
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.docker.network=mystack_traefik-net"
+        - "traefik.enable=true"
+        - "traefik.frontend.entryPoints=http,https"
+        - "traefik.frontend.rule=Host:django1.traefik"
+        - "traefik.port=8000"
+
+  django2:
+    image: futoshita/django
+    command: gunicorn hello_django.wsgi:application --bind 0.0.0.0:8001
+    volumes:
+      - ./app/:/usr/src/app/
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/mediafiles
+    environment:
+      - SECRET_KEY=please_change_me
+      - SQL_ENGINE=django.db.backends.postgresql
+      - SQL_DATABASE=postgres
+      - SQL_USER=postgres
+      - SQL_PASSWORD=postgres
+      - SQL_HOST=postgres
+      - SQL_PORT=5432
+      - DATABASE=postgres
+    depends_on:
+      - postgres
+    networks:
+      - traefik-net
+    deploy:
+      replicas: 1
+      labels:
+        - "traefik.docker.network=mystack_traefik-net"
+        - "traefik.enable=true"
+        - "traefik.frontend.entryPoints=http,https"
+        - "traefik.frontend.rule=Host:django2.traefik"
+        - "traefik.port=8001"
+
+networks:
+  traefik-net:
+
+volumes:
+  portainerdata:
+  postgres_data:
+  static_volume:
+  media_volume:
