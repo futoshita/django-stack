@@ -42,6 +42,14 @@ docker build . -t futoshita/django
 docker stack deploy -c django-stack.yml mystack
 ```
 
+## use
+
+https://portainer.traefik
+
+https://django1.traefik
+
+https://django2.traefik
+
 ## stop
 
 ```
