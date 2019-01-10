@@ -1,6 +1,6 @@
 ## init
 
-init docker swarm:
+init docker swarm
 
 ```
 docker swarm init
@@ -33,7 +33,7 @@ update the SECRET_KEY in django-stack.yml
 ## build
 
 ```
-docker build . -t futoshita/django
+docker build ./app -t futoshita/django
 ```
 
 ## start
