@@ -44,6 +44,8 @@ docker stack deploy -c django-stack.yml mystack
 
 ## use
 
+Traefik dashboard: http://127.0.0.1:8080/dashboard/
+
 https://portainer.traefik
 
 https://django1.traefik
